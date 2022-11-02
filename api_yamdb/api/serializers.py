@@ -37,6 +37,3 @@ class TitleSerializer(serializers.ModelSerializer):
         if value > year:
             raise serializers.ValidationError('Проверье год указанного произведения.')
         return value 
-
-
-

@@ -29,3 +29,8 @@ class GenreViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
+
+    # def perform_destroy(self, serializer):
+    #     genre_slug = self.kwargs['slug']
+    #     genre = get_object_or_404(Genre, slug=genre_slug)
+        

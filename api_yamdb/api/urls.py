@@ -8,6 +8,13 @@ router_v1.register('titles', TitleViewSet)
 router_v1.register('categories', CategoryViewSet)
 router_v1.register('genres', GenreViewSet)
 
+# router_v1.register(
+#     r'genres/(?P<slug>\w?)/comments',
+#     CommentViewSet,
+#     basename='comment'
+# )
+
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
 ]
+
