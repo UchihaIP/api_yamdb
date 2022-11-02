@@ -11,6 +11,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    name = serializers.StringRelatedField(
+        read_only=True,
+    )
 
     class Meta:
         fields = ('name', 'slug')
@@ -35,5 +38,5 @@ class TitleSerializer(serializers.ModelSerializer):
     def validate_year(self, value):
         year = dt.date.today().year
         if value > year:
-            raise serializers.ValidationError('Проверье год указанного произведения.')
+            raise serializers.ValidationError('Проверьте год указанного произведения.')
         return value 
