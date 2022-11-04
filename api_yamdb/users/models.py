@@ -2,11 +2,12 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 USER_ROLES = (
-    ('User', 'Пользователь'), 
-    ('Moderator', 'Модератор'), 
-    ('Admin', 'Админ'), 
+    ('User', 'Пользователь'),
+    ('Moderator', 'Модератор'),
+    ('Admin', 'Админ'),
     ('Superuser', 'Суперпользователь')
 )
+
 
 class User(AbstractUser):
     username = models.CharField(
@@ -39,3 +40,30 @@ class User(AbstractUser):
         blank=True,
         verbose_name='Биография'
     )
+    confirmation_code = models.CharField(
+        max_length=5,
+        null=True
+    )
+
+    @property
+    def is_user(self):
+        return self.role == 'User'
+
+    @property
+    def is_moderator(self):
+        return self.role == 'Moderator'
+
+    @property
+    def is_admin(self):
+        return self.role == 'Admin'
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['username', 'email'],
+                name='unique_user'
+            ),
+        ]
+
+    def __str__(self):
+        return self.username
