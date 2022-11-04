@@ -50,14 +50,20 @@ class RegistrySerializer(serializers.Serializer):
     email = serializers.EmailField(
         max_length=100,
         required=True,
-        validators=(UniqueValidator(
-            queryset=User.objects.all())
-        )
+        validators=[UniqueValidator(
+            queryset=User.objects.all())]
     )
     username = serializers.CharField(
         max_length=100,
         required=True
     )
+
+    def username_validate(self, username):
+        if username == 'me':
+            raise serializers.ValidationError(
+                "Использовать имя 'me' в качестве username запрещено."
+            )
+        return username
 
 
 class JWTTokenSerializer(serializers.Serializer):

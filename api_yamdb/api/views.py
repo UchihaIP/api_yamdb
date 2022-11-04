@@ -1,15 +1,18 @@
+import time
+
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from reviews.models import Category, Genre, Title
-
-from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from django.core.mail import send_mail
+from rest_framework import viewsets, status
 from rest_framework.filters import SearchFilter
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from api_yamdb.settings import CONTACT_EMAIL
 from users.models import User
-from .permissions import IsAdmin, IsAdminOrReadOnly, IsAdminModeratirAuthor
+from .permissions import IsAdmin, IsAdminOrReadOnly
 from .serializers import (CategorySerializer,
                           GenreSerializer,
                           TitleSerializer,
@@ -45,43 +48,100 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 
 class RegistryView(APIView):
+    permission_classes = (AllowAny,)
     def post(self, request):
         serializer = RegistrySerializer(data=request.data)
-        serializer.is_valid()
+        serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get("email")
         username = serializer.validated_data.get("username")
         if serializer.is_valid():
-            # confirmation_code = func_for_generatecode()
-            user, _ = User.objects.get_or_create(
-                username=username,
-                email=email
+            confirmation_code = str(time.time())[-5:]
+            user = User.objects.get(
+                username=username
             )
-            # user.confirmation_code = confirmation_code
-            # user.save()
-            # mail_confirmation_code()
-            return Response(serializer.validated_data, status=200)
+            if user:
+                return Response('Такой пользователь уже существует',
+                                status=status.HTTP_403_FORBIDDEN)
+
+            User.objects.create_user(username=username,
+                                     email=email)
+            User.objects.get(username).update(confirmation_code=
+                                              confirmation_code)
+            send_mail(
+                subject="Ваш код для доступа",
+                message=confirmation_code,
+                from_email=CONTACT_EMAIL,
+                recipient_list=[email]
+            )
+            return Response(serializer.data,
+                            status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class JWTTokenView(APIView):
+    permission_classes = (AllowAny,)
     def post(self, request):
         serializer = JWTTokenSerializer(data=request.data)
-        serializer.is_valid()
-        confirmation_code = serializer.validated_data.get("confirmation_code")
-        username = serializer.validated_data.get("username")
-        user = get_object_or_404(
-            User,
-            username
+        serializer.is_valid(raise_exception=True)
+        user = User.objects.get(
+            username=serializer.validated_data['username']
         )
-        if user.confirmation_code != confirmation_code:
-            return Response("Access denied", status=400)
-
-        return Response({
-            "access_token": str(RefreshToken.for_user(user))
-        })
+        if not user:
+            return Response(
+                'Пользователь не найден!',
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if serializer.validated_data.get(
+                'confirmation_code') == user.confirmation_code:
+            token = RefreshToken.for_user(user).access_token
+            return Response(
+                {
+                    'token': str(token)
+                },
+                status=status.HTTP_201_CREATED)
+        return Response(
+            'Access_denied',
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
+    filter_backends = (SearchFilter,)
     search_fields = ("username",)
+
+
+class UserProfileViewSet(APIView):
+    # !create get and patch methods
+    def get(self, request):
+        if request.user.is_authenticated:
+            serializer = UserSerializer(request.user)
+            return Response(serializer.data)
+        return Response(
+            'У нас нет доступа к ресурсу',
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    def patch(self, request):
+        if request.user.is_authenticated:
+            if request.user.is_admin:
+                serializer = UserSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True
+                )
+            else:
+                serializer = UserSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True
+                )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(
+            'У нас нет доступа к ресурсу',
+            status=status.HTTP_401_UNAUTHORIZED
+        )
