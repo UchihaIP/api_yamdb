@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from random import randint
+
+RANDOM_CONFIRMATION_CODE = randint(1000,9999)
 
 USER_ROLES = (
     ('User', 'Пользователь'),
