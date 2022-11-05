@@ -1,12 +1,20 @@
-from reviews.models import Category, Genre, Title, Review, Comment
+from reviews.models import Category, Genre, Title, Review
 
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 
 from .serializers import (CategorySerializer, GenreSerializer, TitleSerializer, ReviewSerialiser, CommentSerialiser)
 
+from users.models import User
+
+
+class CreateListDestroyViewSet(
+    mixins.CreateModelMixin, mixins.ListModelMixin, 
+    mixins.DestroyModelMixin ,viewsets.GenericViewSet):
+    pass
+    
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
@@ -14,25 +22,22 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = None
     permission_classes = (AllowAny,)  #IsAdminOrReadOnly
 
-
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(CreateListDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = None
     permission_classes = (AllowAny,)  #IsAdminOrReadOnly
+    lookup_field = 'slug'
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(CreateListDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     pagination_class = None
     permission_classes = (AllowAny,)
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
-
-    # def perform_destroy(self, serializer):
-    #     genre_slug = self.kwargs['slug']
-    #     genre = get_object_or_404(Genre, slug=genre_slug)
+    lookup_field = 'slug'
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -45,7 +50,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs['title_id'])
-        serializer.save(title=title, author=self.request.user)
+        serializer.save(title=title, author=User.objects.get(pk=1))
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -58,4 +63,4 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])
-        serializer.save(review=review, author=self.request.user)
+        serializer.save(review=review, author=User.objects.get(pk=1))
