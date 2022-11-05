@@ -45,7 +45,8 @@ class User(AbstractUser):
     )
     confirmation_code = models.CharField(
         max_length=5,
-        null=True
+        null=True,
+        default=RANDOM_CONFIRMATION_CODE
     )
 
     @property
