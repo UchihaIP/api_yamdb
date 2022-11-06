@@ -43,6 +43,31 @@ class User(AbstractUser):
         blank=True,
         verbose_name='Биография'
     )
-    confirmation_code = models.IntegerField(
-        default = RANDOM_CONFIRMATION_CODE
+    confirmation_code = models.CharField(
+        max_length=5,
+        null=True,
+        default=RANDOM_CONFIRMATION_CODE
     )
+
+    @property
+    def is_user(self):
+        return self.role == 'User'
+
+    @property
+    def is_moderator(self):
+        return self.role == 'Moderator'
+
+    @property
+    def is_admin(self):
+        return self.role == 'Admin'
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['username', 'email'],
+                name='unique_user'
+            ),
+        ]
+
+    def __str__(self):
+        return self.username

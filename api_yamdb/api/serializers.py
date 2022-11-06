@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from reviews.models import Category, Genre, Title, GenreTitle
 import datetime as dt
+from django.db.models import Avg
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -16,23 +17,11 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
         model = Genre
 
-class GenreCreateSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        fields = ('slug',)
-        model = Genre
-
 
 class TitleSerializer(serializers.ModelSerializer):
 
-    rating = serializers.IntegerField(
-        read_only=True,
-        min_value=0,
-        default=0,
-        max_value=10,
-        source='reviews__score__avg'
-    )
-
+    rating = serializers.SerializerMethodField()
+    # rating = serializers.IntegerField(default=0)
     genre = serializers.SlugRelatedField(
         queryset = Genre.objects.all(),
         slug_field='slug',
@@ -47,7 +36,16 @@ class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
         model = Title
-        read_only_fields = ('id', 'description', 'rating')
+        read_only_fields = ('id', 'rating')
+
+
+    def get_rating(self, obj):
+        reviews_to_title = Review.objects.filter(title=obj.id).aggregate(Avg('score'))
+        avg_score = reviews_to_title['score__avg']
+        if avg_score is None:
+            return 0
+        return float('{:.1f}'.format(avg_score))
+
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
