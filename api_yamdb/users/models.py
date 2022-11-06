@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from random import randint
+
+RANDOM_CONFIRMATION_CODE = randint(1000,9999)
 
 USER_ROLES = (
     ('User', 'Пользователь'),
@@ -42,7 +45,8 @@ class User(AbstractUser):
     )
     confirmation_code = models.CharField(
         max_length=5,
-        null=True
+        null=True,
+        default=RANDOM_CONFIRMATION_CODE
     )
 
     @property
