@@ -1,18 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from random import randint
-
-RANDOM_CONFIRMATION_CODE = randint(1000,9999)
-
-USER_ROLES = (
-    ('User', 'Пользователь'),
-    ('Moderator', 'Модератор'),
-    ('Admin', 'Админ'),
-    ('Superuser', 'Суперпользователь')
-)
 
 
 class User(AbstractUser):
+    USER_ROLES = (
+        ('user', 'user'),
+        ('moderator', 'moderator'),
+        ('admin', 'admin'),
+    )
+
     username = models.CharField(
         max_length=100,
         unique=True,
@@ -26,7 +22,7 @@ class User(AbstractUser):
         max_length=20,
         choices=USER_ROLES,
         blank=True,
-        default='User',
+        default='user',
         verbose_name='Роль пользователя'
     )
     first_name = models.CharField(
@@ -44,22 +40,21 @@ class User(AbstractUser):
         verbose_name='Биография'
     )
     confirmation_code = models.CharField(
-        max_length=5,
-        null=True,
-        default=RANDOM_CONFIRMATION_CODE
+        max_length=6,
+        null=True
     )
 
     @property
     def is_user(self):
-        return self.role == 'User'
+        return self.role == 'user'
 
     @property
     def is_moderator(self):
-        return self.role == 'Moderator'
+        return self.role == 'moderator'
 
     @property
     def is_admin(self):
-        return self.role == 'Admin'
+        return self.role == 'admin' or self.is_superuser
 
     class Meta:
         constraints = [
