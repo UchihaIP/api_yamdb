@@ -17,15 +17,8 @@ router_v1.register('users', UserViewSet, basename='users')
 router_v1.register(r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='reviews')
 router_v1.register(r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments', CommentViewSet, basename='comments')
 
-# router_v1.register(
-#     r'genres/(?P<slug>\w?)/comments',
-#     CommentViewSet,
-#     basename='comment'
-# )
-
 urlpatterns = [
     path('v1/auth/signup/', RegistryView.as_view(), name='signup'),
     path('v1/auth/token/', JWTTokenView.as_view(), name='get_token'),
     path('v1/', include(router_v1.urls))
 ]
-

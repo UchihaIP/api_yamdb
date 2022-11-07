@@ -1,32 +1,27 @@
 import time
 
+from django.core.mail import send_mail
+from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import Category, Genre, Title, Review
-from django.db import IntegrityError
-from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status, mixins
-from rest_framework.filters import SearchFilter
-
-
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from rest_framework.pagination import PageNumberPagination
-from django_filters.rest_framework import DjangoFilterBackend
 from .filters import TitleFilter
-
-from api_yamdb.settings import CONTACT_EMAIL
-from users.models import User
-from .permissions import IsAdmin, IsAdminOrReadOnly, IsAdminModeratirAuthor
-
-
+from .permissions import IsAdmin, IsAdminOrReadOnly, IsAdminModeratorAuthor
 from .serializers import (
     CategorySerializer, GenreSerializer, TitleSerializer, RegistrySerializer,
     JWTTokenSerializer, UserSerializer, UserMeChangeSerializer,
     ReviewSerializer, CommentSerialiser)
+from api_yamdb.settings import CONTACT_EMAIL
+from reviews.models import Category, Genre, Title, Review
+from users.models import User
 
 
 class CreateListDestroyViewSet(
@@ -140,9 +135,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-
-    serializer_class = ReviewSerialiser
-    permission_classes = (IsAdminModeratirAuthor,)
+    serializer_class = ReviewSerializer
+    permission_classes = (IsAdminModeratorAuthor,)
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -156,8 +150,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerialiser
 
-    permission_classes = (IsAdminModeratirAuthor,)
-
+    permission_classes = (IsAdminModeratorAuthor,)
 
     def get_queryset(self):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])

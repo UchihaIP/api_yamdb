@@ -1,14 +1,11 @@
+import datetime as dt
 import re
 
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.validators import UniqueValidator
-from django.db.models import Avg
 
 from reviews.models import Category, Genre, Title, Review, Comment, GenreTitle
-import datetime as dt
-
-
 from users.models import User
 
 
@@ -32,7 +29,6 @@ class GenreCreateSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
-
 
     genre = serializers.SlugRelatedField(
         queryset=Genre.objects.all(),
@@ -132,7 +128,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserMeChangeSerializer(UserSerializer):
-
     class Meta(UserSerializer.Meta):
         read_only_fields = ('username', 'email', 'role')
 
