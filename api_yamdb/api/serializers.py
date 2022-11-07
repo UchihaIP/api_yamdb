@@ -3,9 +3,11 @@ import re
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
+from django.db.models import Avg
 
 from reviews.models import Category, Genre, Title, Review, Comment, GenreTitle
 import datetime as dt
+
 
 from users.models import User
 
@@ -29,13 +31,8 @@ class GenreCreateSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    rating = serializers.IntegerField(
-        read_only=True,
-        min_value=0,
-        default=0,
-        max_value=10,
-        source='reviews__score__avg'
-    )
+    rating = serializers.SerializerMethodField()
+
 
     genre = serializers.SlugRelatedField(
         queryset=Genre.objects.all(),
@@ -52,6 +49,13 @@ class TitleSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
         model = Title
         read_only_fields = ('id', 'rating')
+
+    def get_rating(self, obj):
+        reviews_to_title = Review.objects.filter(title=obj.id).aggregate(Avg('score'))
+        avg_score = reviews_to_title['score__avg']
+        if avg_score is None:
+            return 0
+        return float('{:.1f}'.format(avg_score))
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
