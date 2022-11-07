@@ -41,13 +41,17 @@ class GenreTitle(models.Model):
 class Review(models.Model):
     """Класс отзывов."""
     text = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviews')
     score = models.IntegerField()
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-    title = models.ForeignKey(Title, on_delete=models.CASCADE, related_name='reviews')
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE, related_name='reviews')
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['author', 'title'], name='unuque_user_make_review')]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'], name='unuque_user_make_review')]
 
     def __str__(self) -> TextField:
         return self.text
@@ -56,9 +60,11 @@ class Review(models.Model):
 class Comment(models.Model):
     """Класс комментариев."""
     text = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comments')
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='comments')
+    review = models.ForeignKey(
+        Review, on_delete=models.CASCADE, related_name='comments')
 
     def __str__(self) -> TextField:
         return self.text
