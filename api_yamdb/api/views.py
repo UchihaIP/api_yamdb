@@ -112,26 +112,27 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
 
     @action(
-        detail=True,
+        detail=False,
         methods=['GET', 'PATCH'],
         permission_classes=[IsAuthenticated, ],
         url_path='me',
         url_name='my_profile'
     )
     def get_or_change_profile_info(self, request):
-        user = get_object_or_404(User, username=self.request.user)
         if request.method == "GET":
-            serializer = UserMeChangeSerializer(user,
+            serializer = UserMeChangeSerializer(request.user,
                                                 data=request.data)
+            serializer.is_valid(raise_exception=True)
             return Response(serializer.data,
                             status=status.HTTP_200_OK)
         if request.method == "PATCH":
-            serializer = UserMeChangeSerializer(user,
+            serializer = UserMeChangeSerializer(request.user,
                                                 data=request.data,
                                                 partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data,
+                            status=status.HTTP_200_OK)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
