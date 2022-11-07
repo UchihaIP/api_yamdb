@@ -1,4 +1,7 @@
+import re
+
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 
 from reviews.models import Category, Genre, Title, Review, Comment, GenreTitle
@@ -8,27 +11,24 @@ from users.models import User
 
 
 class CategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         fields = ('name', 'slug')
         model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
     class Meta:
         fields = ('name', 'slug')
         model = Genre
 
-class GenreCreateSerializer(serializers.ModelSerializer):
 
+class GenreCreateSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('slug',)
         model = Genre
 
 
 class TitleSerializer(serializers.ModelSerializer):
-
     rating = serializers.IntegerField(
         read_only=True,
         min_value=0,
@@ -38,13 +38,13 @@ class TitleSerializer(serializers.ModelSerializer):
     )
 
     genre = serializers.SlugRelatedField(
-        queryset = Genre.objects.all(),
+        queryset=Genre.objects.all(),
         slug_field='slug',
         many=True
     )
 
     category = serializers.SlugRelatedField(
-        queryset = Category.objects.all(),
+        queryset=Category.objects.all(),
         slug_field='slug',
     )
 
@@ -66,33 +66,36 @@ class TitleSerializer(serializers.ModelSerializer):
             current_genre = Genre.objects.get(slug=genre_slug.slug)
             GenreTitle.objects.create(
                 genre=current_genre, title=title)
-        return title 
+        return title
 
     def validate_year(self, value):
         year = dt.date.today().year
         if value > year:
             raise serializers.ValidationError('Год не должен быть больше текущего.')
-        return value 
+        return value
 
 
 class RegistrySerializer(serializers.Serializer):
-    email = serializers.EmailField(
-        max_length=100,
-        required=True,
-        validators=[UniqueValidator(
-            queryset=User.objects.all())]
-    )
     username = serializers.CharField(
         max_length=100,
         required=True
     )
+    email = serializers.EmailField(
+        max_length=100,
+        required=True
+    )
 
-    def username_validate(self, username):
-        if username == 'me':
-            raise serializers.ValidationError(
-                "Использовать имя 'me' в качестве username запрещено."
-            )
-        return username
+    def validate_username(self, value):
+        if value == 'me':
+            raise ValidationError(
+                "Использовать имя 'me' в качестве username запрещено.")
+        if re.search(r'^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$', value) is None:
+            raise ValidationError(
+                "В имени есть недопустимые символы")
+        return value
+
+    class Meta:
+        fields = ('username', 'email')
 
 
 class JWTTokenSerializer(serializers.Serializer):
@@ -104,6 +107,9 @@ class JWTTokenSerializer(serializers.Serializer):
         max_length=30,
         required=True
     )
+
+    class Meta:
+        fields = ('username', 'confirmation_code')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -121,7 +127,13 @@ class UserSerializer(serializers.ModelSerializer):
         return username
 
 
-class ReviewSerialiser(serializers.ModelSerializer):
+class UserMeChangeSerializer(UserSerializer):
+
+    class Meta(UserSerializer.Meta):
+        read_only_fields = ('username', 'email', 'role')
+
+
+class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(read_only=True, slug_field='username')
 
     class Meta:
@@ -141,5 +153,5 @@ class CommentSerialiser(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
-        model =Comment
+        model = Comment
         read_only_field = ('review',)
