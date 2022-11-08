@@ -18,8 +18,8 @@ class Command(BaseCommand):
     help = 'Load csv files to users models.'
 
     def handle(self, *args, **kwargs):
-
-        with open(f'{settings.BASE_DIR}/static/data/users.csv', 'r') as csvfile:
+        with open(f'{settings.BASE_DIR}/static/data/users.csv',
+                  'r') as csvfile:
             reader = csv.DictReader(csvfile)
             User.objects.all().delete()
             for row in reader:

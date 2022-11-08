@@ -10,7 +10,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        with open(f'{settings.BASE_DIR}/static/data/category.csv', 'r') as csvfile:
+        with open(f'{settings.BASE_DIR}/static/data/category.csv', 'r'
+                  ) as csvfile:
             Category.objects.all().delete()
             reader = csv.DictReader(csvfile)
             for row in reader:
@@ -21,7 +22,8 @@ class Command(BaseCommand):
                 )
             csvfile.close()
 
-        with open(f'{settings.BASE_DIR}/static/data/genre.csv') as csvfile:
+        with open(f'{settings.BASE_DIR}/static/data/genre.csv'
+                  ) as csvfile:
             Genre.objects.all().delete()
             reader = csv.DictReader(csvfile)
             for row in reader:
@@ -31,12 +33,11 @@ class Command(BaseCommand):
                     slug=row['slug'],
                 )
 
-
-        with open(f'{settings.BASE_DIR}/static/data/titles.csv') as csvfile:
+        with open(f'{settings.BASE_DIR}/static/data/titles.csv'
+                  ) as csvfile:
             reader = csv.DictReader(csvfile)
             Title.objects.all().delete()
             for row in reader:
-                # current_category = Category.objects.get(id=row['category'])
                 Title.objects.create(
                     id=row['id'],
                     name=row['name'],
@@ -44,8 +45,8 @@ class Command(BaseCommand):
                     category=Category.objects.get(id=row['category']),
                 )
 
-
-        with open(f'{settings.BASE_DIR}/static/data/genre_title.csv') as csvfile:
+        with open(f'{settings.BASE_DIR}/static/data/genre_title.csv'
+                  ) as csvfile:
             reader = csv.DictReader(csvfile)
             GenreTitle.objects.all().delete()
             for row in reader:
@@ -55,9 +56,8 @@ class Command(BaseCommand):
                     genre_id=row['genre_id'],
                 )
 
-
-
-        with open(f'{settings.BASE_DIR}/static/data/review.csv') as csvfile:
+        with open(f'{settings.BASE_DIR}/static/data/review.csv'
+                  ) as csvfile:
             reader = csv.DictReader(csvfile)
             Review.objects.all().delete()
             for row in reader:
@@ -69,9 +69,9 @@ class Command(BaseCommand):
                     score=row['score'],
                     pub_date=row['pub_date'],
                 )
- 
 
-        with open(f'{settings.BASE_DIR}/static/data/comments.csv') as csvfile:
+        with open(f'{settings.BASE_DIR}/static/data/comments.csv'
+                  ) as csvfile:
             reader = csv.DictReader(csvfile)
             Comment.objects.all().delete()
             for row in reader:
