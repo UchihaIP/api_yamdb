@@ -25,8 +25,11 @@ from users.models import User
 
 
 class CreateListDestroyViewSet(
-    mixins.CreateModelMixin, mixins.ListModelMixin,
-    mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
     pass
 
 
@@ -118,11 +121,6 @@ class UserViewSet(viewsets.ModelViewSet):
         url_path='me',
         url_name='my_profile'
     )
-
-
-
-
-
     def get_or_change_profile_info(self, request):
         if request.method == "GET":
             serializer = UserMeChangeSerializer(request.user,

@@ -42,12 +42,14 @@ class TitleSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
         model = Title
         read_only_fields = ('id', 'rating')
 
     def get_rating(self, obj):
-        reviews_to_title = Review.objects.filter(title=obj.id).aggregate(Avg('score'))
+        reviews_to_title = Review.objects.filter(
+            title=obj.id).aggregate(Avg('score'))
         avg_score = reviews_to_title['score__avg']
         if avg_score is None:
             return None
@@ -71,7 +73,8 @@ class TitleSerializer(serializers.ModelSerializer):
     def validate_year(self, value):
         year = dt.date.today().year
         if value > year:
-            raise serializers.ValidationError('Год не должен быть больше текущего.')
+            raise serializers.ValidationError(
+                'Год не должен быть больше текущего.')
         return value
 
 
@@ -133,22 +136,30 @@ class UserMeChangeSerializer(UserSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(read_only=True, slug_field='username')
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username')
 
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
-        # validators = (validators.UniqueTogetherValidator(queryset=Review.objects.all(), fields=('author', 'title_id')),)
         read_only_field = ('title',)
 
     def validate(self, attrs):
         if attrs['score'] < 1 or attrs['score'] > 10:
+            print(self.context['request'].method)
             raise serializers.ValidationError('Оценка должна быть от 1 до 10!')
+        if (
+            Review.objects.filter(
+                title__id=self.context['view'].kwargs['title_id'],
+                author=self.context['request'].user).exists()
+                and self.context['request'].method == 'POST'):
+            raise serializers.ValidationError('Отзыв можно только один.')
         return super().validate(attrs)
 
 
 class CommentSerialiser(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(read_only=True, slug_field='username')
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username')
 
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
