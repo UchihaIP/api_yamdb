@@ -2,6 +2,7 @@ import time
 
 from django.core.mail import send_mail
 from django.db import IntegrityError
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
@@ -34,7 +35,13 @@ class CreateListDestroyViewSet(
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = (Title.objects.all()
+            .select_related('category')
+            .prefetch_related('genre')
+            .annotate(
+                rating = Avg('reviews__score')
+                )
+            .order_by('name'))
     serializer_class = TitleSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsAdminOrReadOnly,)

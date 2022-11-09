@@ -3,10 +3,15 @@ from django.db import models
 
 
 class User(AbstractUser):
+
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
+
     USER_ROLES = (
-        ('user', 'user'),
-        ('moderator', 'moderator'),
-        ('admin', 'admin'),
+        (USER, 'user'),
+        (MODERATOR, 'moderator'),
+        (ADMIN, 'admin'),
     )
 
     username = models.CharField(

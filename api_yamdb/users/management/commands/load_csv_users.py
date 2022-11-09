@@ -9,10 +9,6 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 PATH_TO_FILE = os.path.abspath(f'{parent_dir_path}/static/data/')
 
-Model_vs_file = {
-    User: "users.csv",
-}
-
 
 class Command(BaseCommand):
     help = 'Load csv files to users models.'
@@ -22,14 +18,6 @@ class Command(BaseCommand):
                   'r') as csvfile:
             reader = csv.DictReader(csvfile)
             User.objects.all().delete()
-            for row in reader:
-                User.objects.create(
-                    id=row['id'],
-                    username=row['username'],
-                    email=row['email'],
-                    role=row['role'],
-                    bio=row['bio'],
-                    first_name=row['first_name'],
-                    last_name=row['last_name'],
-                )
+            objs = [User(**row) for row in reader]
+            User.objects.bulk_create(objs)
             return 'Распаковка csv файла модели User прошла успешно!'

@@ -10,8 +10,8 @@ class TitleAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-# class ReviewAdmin(admin.ModelAdmin):
-#     list_display = ('title_id', 'text', 'score', 'title')
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('title_id', 'text', 'score', 'title')
 
 
 admin.site.register(Title, TitleAdmin)

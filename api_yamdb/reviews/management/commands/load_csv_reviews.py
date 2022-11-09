@@ -20,7 +20,6 @@ class Command(BaseCommand):
                     name=row['name'],
                     slug=row['slug']
                 )
-            csvfile.close()
 
         with open(f'{settings.BASE_DIR}/static/data/genre.csv'
                   ) as csvfile:
