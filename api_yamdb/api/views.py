@@ -21,7 +21,7 @@ from .serializers import (
     JWTTokenSerializer, UserSerializer, UserMeChangeSerializer,
     ReviewSerializer, CommentSerialiser)
 from api_yamdb.settings import CONTACT_EMAIL
-from reviews.models import Category, Genre, Title, Review
+from reviews.models import Category, Genre, Title, Review, Comment
 from users.models import User
 
 
@@ -151,7 +151,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs['title_id'])
-        return title.reviews.all()
+        return Review.objects.select_related('author').filter(title=title)
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -165,7 +165,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])
-        return review.comments.all()
+        return Comment.objects.select_related('author').filter(review=review)
 
     def perform_create(self, serializer):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])

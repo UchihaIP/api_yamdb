@@ -133,7 +133,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['score'] < 1 or attrs['score'] > 10:
-            print(self.context['request'].method)
             raise serializers.ValidationError('Оценка должна быть от 1 до 10!')
         if (
             Review.objects.filter(
