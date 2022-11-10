@@ -19,8 +19,6 @@ from .serializers import (
     JWTTokenSerializer, UserSerializer, UserMeChangeSerializer,
     ReviewSerializer, CommentSerialiser)
 from api_yamdb import settings
-from reviews.models import Category, Genre, Title, Review
-from api_yamdb.settings import CONTACT_EMAIL
 from reviews.models import Category, Genre, Title, Review, Comment
 from users.models import User
 
