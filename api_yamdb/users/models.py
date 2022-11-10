@@ -58,8 +58,8 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return (self.role == User.ADMIN or self.is_superuser or
-                self.is_staff)
+        return (self.role == User.ADMIN or self.is_superuser
+                or self.is_staff)
 
     class Meta:
         constraints = [

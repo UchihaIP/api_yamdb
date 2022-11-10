@@ -1,7 +1,6 @@
 import datetime as dt
 import re
 
-from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -36,17 +35,18 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+            'id', 'name', 'year', 'rating',
+            'description', 'genre', 'category')
         model = Title
         read_only_fields = ('id', 'rating')
 
-
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        response['category'] = CategorySerializer(instance.category).data
-        response['genre'] = GenreSerializer(instance.genre, many=True).data
+        response['category'] = CategorySerializer(
+            instance.category).data
+        response['genre'] = GenreSerializer(
+            instance.genre, many=True).data
         return response
-
 
     def create(self, validated_data):
         genre_slugs = validated_data.pop('genre')
@@ -135,9 +135,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         if attrs['score'] < 1 or attrs['score'] > 10:
             raise serializers.ValidationError('Оценка должна быть от 1 до 10!')
         if (
-            Review.objects.filter(
-                title__id=self.context['view'].kwargs['title_id'],
-                author=self.context['request'].user).exists()
+                Review.objects.filter(
+                    title__id=self.context['view'].kwargs['title_id'],
+                    author=self.context['request'].user).exists()
                 and self.context['request'].method == 'POST'):
             raise serializers.ValidationError('Отзыв можно только один.')
         return super().validate(attrs)

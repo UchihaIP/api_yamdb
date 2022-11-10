@@ -38,8 +38,7 @@ class TitleViewSet(viewsets.ModelViewSet):
                 .prefetch_related('genre')
                 .annotate(
         rating=Avg('reviews__score')
-    )
-                .order_by('name'))
+    ).order_by('name'))
     serializer_class = TitleSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsAdminOrReadOnly,)
