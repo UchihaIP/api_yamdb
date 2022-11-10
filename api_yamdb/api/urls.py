@@ -21,7 +21,7 @@ router_v1.register(
     CommentViewSet, basename='comments')
 
 urlpatterns = [
-    path('v1/auth/signup/', RegistryView.as_view(), name='signup'),
-    path('v1/auth/token/', JWTTokenView.as_view(), name='get_token'),
+    path('v1/auth/signup/', RegistryView),
+    path('v1/auth/token/', JWTTokenView),
     path('v1/', include(router_v1.urls))
 ]

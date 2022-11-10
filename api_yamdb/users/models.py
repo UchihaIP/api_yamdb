@@ -3,7 +3,6 @@ from django.db import models
 
 
 class User(AbstractUser):
-
     USER = 'user'
     MODERATOR = 'moderator'
     ADMIN = 'admin'
@@ -27,7 +26,7 @@ class User(AbstractUser):
         max_length=20,
         choices=USER_ROLES,
         blank=True,
-        default='user',
+        default=USER,
         verbose_name='Роль пользователя'
     )
     first_name = models.CharField(
@@ -51,15 +50,16 @@ class User(AbstractUser):
 
     @property
     def is_user(self):
-        return self.role == 'user'
+        return self.role == User.USER
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == User.MODERATOR
 
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.is_superuser
+        return (self.role == User.ADMIN or self.is_superuser or
+                self.is_staff)
 
     class Meta:
         constraints = [

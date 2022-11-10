@@ -1,17 +1,15 @@
-import time
-
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .filters import TitleFilter
@@ -20,7 +18,7 @@ from .serializers import (
     CategorySerializer, GenreSerializer, TitleSerializer, RegistrySerializer,
     JWTTokenSerializer, UserSerializer, UserMeChangeSerializer,
     ReviewSerializer, CommentSerialiser)
-from api_yamdb.settings import CONTACT_EMAIL
+from api_yamdb import settings
 from reviews.models import Category, Genre, Title, Review
 from users.models import User
 
@@ -36,12 +34,12 @@ class CreateListDestroyViewSet(
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = (Title.objects.all()
-            .select_related('category')
-            .prefetch_related('genre')
-            .annotate(
-                rating = Avg('reviews__score')
-                )
-            .order_by('name'))
+                .select_related('category')
+                .prefetch_related('genre')
+                .annotate(
+        rating=Avg('reviews__score')
+    )
+                .order_by('name'))
     serializer_class = TitleSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsAdminOrReadOnly,)
@@ -69,48 +67,38 @@ class GenreViewSet(CreateListDestroyViewSet):
     lookup_field = 'slug'
 
 
-class RegistryView(APIView):
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
-        serializer = RegistrySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data.get("email")
-        username = serializer.validated_data.get("username")
-        try:
-            user, _ = User.objects.get_or_create(
-                username=username,
-                email=email
-            )
-        except IntegrityError:
-            return Response("Данный пользователь уже существует",
-                            status=status.HTTP_400_BAD_REQUEST)
-        confirmation_code = str(time.time())[-5:]
-        send_mail(
-            subject="Ваш код для доступа",
-            message=confirmation_code,
-            from_email=CONTACT_EMAIL,
-            recipient_list=[email]
-        )
+@api_view(["POST"])
+def RegistryView(request):
+    serializer = RegistrySerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data.get("email")
+    username = serializer.validated_data.get("username")
+    try:
+        user, _ = User.objects.get_or_create(username=username,
+                                             email=email)
+        confirmation_code = default_token_generator.make_token(user)
+        _send_email(email, confirmation_code)
         user.confirmation_code = confirmation_code
         user.save()
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+    except IntegrityError:
+        return Response('Такой пользователь уже существует, \n'
+                        'Код отправлен существующему пользователю',
+                        status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
-class JWTTokenView(APIView):
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
-        serializer = JWTTokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data.get('username')
-        user = get_object_or_404(User, username=username)
-        confirmation_code = serializer.validated_data.get('confirmation_code')
-        if confirmation_code == user.confirmation_code:
-            token = str(AccessToken.for_user(user))
-            return Response({'token': token},
-                            status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(["POST"])
+def JWTTokenView(request):
+    serializer = JWTTokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data.get('username')
+    user = get_object_or_404(User, username=username)
+    confirmation_code = serializer.validated_data.get('confirmation_code')
+    if confirmation_code == user.confirmation_code:
+        token = str(AccessToken.for_user(user))
+        return Response({'token': token},
+                        status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -170,3 +158,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])
         serializer.save(review=review, author=self.request.user)
+
+
+def _send_email(email, confirmation_code):
+    send_mail(
+        subject="Ваш код для доступа",
+        message=confirmation_code,
+        from_email=settings.CONTACT_EMAIL,
+        recipient_list=[email]
+    )
