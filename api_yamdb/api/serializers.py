@@ -3,6 +3,7 @@ import re
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueValidator
 
 from reviews.models import Category, Genre, Title, Review, Comment, GenreTitle
 from users.models import User
@@ -65,27 +66,39 @@ class TitleSerializer(serializers.ModelSerializer):
         return value
 
 
-class RegistrySerializer(serializers.Serializer):
+class RegistrySerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        max_length=100,
-        required=True
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all()), ]
     )
     email = serializers.EmailField(
-        max_length=100,
-        required=True
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all()), ]
     )
 
-    def validate_username(self, value):
-        if value == 'me':
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+
+    def validate_email(self, email):
+        if email == '':
+            raise serializers.ValidationError(
+                'Не введена почта.'
+            )
+        elif User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                'Такой email уже существует.'
+            )
+        return email
+
+    def validate_username(self, username):
+        if username.lower() == 'me':
             raise ValidationError(
                 "Использовать имя 'me' в качестве username запрещено.")
-        if re.search(r'^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$', value) is None:
+        if re.search(r'^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$', username) is None:
             raise ValidationError(
                 "В имени есть недопустимые символы")
-        return value
-
-    class Meta:
-        fields = ('username', 'email')
+        return username
 
 
 class JWTTokenSerializer(serializers.Serializer):

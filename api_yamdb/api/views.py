@@ -1,4 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg
@@ -68,22 +69,26 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 @api_view(["POST"])
 def RegistryView(request):
-    serializer = RegistrySerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data.get("email")
-    username = serializer.validated_data.get("username")
     try:
-        user, _ = User.objects.get_or_create(username=username,
-                                             email=email)
+        user = User.objects.get(username=request.data.get('username'),
+                                email=request.data.get('email'))
+    except ObjectDoesNotExist:
+        serializer = RegistrySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get("email")
+        username = serializer.validated_data.get("username")
+        try:
+            user = User.objects.create_user(username=username,
+                                            email=email)
+        except IntegrityError:
+            return Response("Такой пользователь уже существует",
+                            status=status.HTTP_400_BAD_REQUEST)
         confirmation_code = default_token_generator.make_token(user)
         _send_email(email, confirmation_code)
-        user.confirmation_code = confirmation_code
-        user.save()
-    except IntegrityError:
-        return Response('Такой пользователь уже существует, \n'
-                        'Код отправлен существующему пользователю',
-                        status=status.HTTP_400_BAD_REQUEST)
-    return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+    confirmation_code = default_token_generator.make_token(user)
+    _send_email(request.data['email'], confirmation_code)
+    return Response("Код подтверждения отправлен!", status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
