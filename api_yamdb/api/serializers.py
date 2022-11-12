@@ -95,7 +95,11 @@ class RegistrySerializer(serializers.ModelSerializer):
         if username.lower() == 'me':
             raise ValidationError(
                 "Использовать имя 'me' в качестве username запрещено.")
-        if re.search(r'^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$', username) is None:
+        elif User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError(
+                'Такой username уже существует.'
+            )
+        elif re.search(r'^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$', username) is None:
             raise ValidationError(
                 "В имени есть недопустимые символы")
         return username

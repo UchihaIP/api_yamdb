@@ -72,20 +72,14 @@ def RegistryView(request):
     try:
         user = User.objects.get(username=request.data.get('username'),
                                 email=request.data.get('email'))
-    except ObjectDoesNotExist:
+    except User.DoesNotExist:
         serializer = RegistrySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data.get("email")
-        username = serializer.validated_data.get("username")
-        try:
-            user = User.objects.create_user(username=username,
-                                            email=email)
-        except IntegrityError:
-            return Response("Такой пользователь уже существует",
-                            status=status.HTTP_400_BAD_REQUEST)
+        user = serializer.save()
         confirmation_code = default_token_generator.make_token(user)
-        _send_email(email, confirmation_code)
+        _send_email(serializer.validated_data.get("email"), confirmation_code)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
     confirmation_code = default_token_generator.make_token(user)
     _send_email(request.data['email'], confirmation_code)
     return Response("Код подтверждения отправлен!", status=status.HTTP_200_OK)
